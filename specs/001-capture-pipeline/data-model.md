@@ -6,22 +6,46 @@
 
 ---
 
-## 1. Type Aliases (Clock Source Distinction)
+## 1. Newtype Wrappers (Clock Source Distinction)
 
-Per Constitution Principle IV, monotonic and wall-clock timestamps MUST be distinct types.
+Per Constitution Principle IV, monotonic and wall-clock timestamps MUST be **distinct types**
+enforced by the compiler — not merely documentation. Type aliases (`type MonotonicNs = u64`)
+do NOT satisfy this requirement because the Rust compiler treats them as identical to `u64`,
+allowing accidental mixing with no error. The **newtype pattern** is mandatory.
 
 ```rust
 /// Nanoseconds elapsed since session start (std::time::Instant, monotonic).
-/// Used for all frame and event timestamps.
-pub type MonotonicNs = u64;
+/// Used for ALL frame and event timestamps within a session.
+///
+/// Compile-enforced: MonotonicNs cannot be used where WallNs is expected, and vice versa.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+pub struct MonotonicNs(pub u64);
 
 /// Nanoseconds since UNIX epoch (std::time::SystemTime, wall-clock).
-/// Used ONLY in session.json for external log joining.
-pub type WallNs = u64;
+/// Used ONLY in session.json for anchoring absolute time and external log joining.
+///
+/// Compile-enforced: WallNs cannot be used where MonotonicNs is expected, and vice versa.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+pub struct WallNs(pub u64);
 ```
 
-These are **compile-enforced** distinctions: a function accepting `MonotonicNs` cannot
-accidentally receive a `WallNs` value.
+**Why newtype, not type alias**:
+- `type MonotonicNs = u64` — alias only; compiler sees both as `u64`; mixing is silent
+- `struct MonotonicNs(pub u64)` — distinct type; passing `WallNs` where `MonotonicNs` is
+  expected is a **compile error**
+
+**Usage pattern**:
+```rust
+// Construction
+let mono = MonotonicNs(session_start.elapsed().as_nanos() as u64);
+let wall = WallNs(SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos() as u64);
+
+// Arithmetic (explicit unwrap of inner value — only in non-production helper code)
+let delta_ns = MonotonicNs(frame_b.0 - frame_a.0);
+
+// This would be a COMPILE ERROR — cannot mix clocks:
+// let bad: MonotonicNs = wall;  // type mismatch
+```
 
 ---
 

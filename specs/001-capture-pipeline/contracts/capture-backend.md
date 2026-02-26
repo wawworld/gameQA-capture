@@ -55,6 +55,7 @@ pub struct CapturedFrame {
     pub capture_ts_ns: MonotonicNs,
 
     /// Diagnostics: DXGI AcquireNextFrame call completion time. None if diagnostics off.
+    /// Type: MonotonicNs (newtype wrapping u64) — cannot be mixed with WallNs.
     pub dxgi_acquire_ts_ns: Option<MonotonicNs>,
 
     /// Diagnostics: memory arrival (= capture_ts_ns in most backends). None if diagnostics off.

@@ -80,9 +80,11 @@ delivers the ring buffer interface and consumer contract; the live bot consumer 
 - [x] **IV. Safe Code**: All three sub-principles satisfied.
   - No `unwrap()`/`expect()` in production paths; all error-propagating functions return
     `Result<_, E>` and bubble errors to the session boundary for a single log entry
-  - Typed clock distinction: `MonotonicNs` (u64, relative to session start, from
-    `std::time::Instant`) vs. `WallNs` (u64, UNIX epoch, from `std::time::SystemTime`);
-    mixing them in the same field is a compile error
+  - Typed clock distinction — **newtype pattern** (NOT type alias):
+    `struct MonotonicNs(pub u64)` and `struct WallNs(pub u64)` are distinct types; the
+    compiler rejects passing `WallNs` where `MonotonicNs` is expected and vice versa.
+    `type MonotonicNs = u64` (alias) was explicitly rejected because it does not prevent
+    mixing — both resolve to `u64` and the compiler accepts silent substitution.
   - All tunables in YAML profiles (fps, buffer sizes, thresholds, grace periods)
   - No global mutable state; all shared state via `Arc<>` + `Mutex<>` or channels; hook
     callback state passed via `crossbeam_channel` sender captured in closure
