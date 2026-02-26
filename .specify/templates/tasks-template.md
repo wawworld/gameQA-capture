@@ -83,8 +83,16 @@ Examples of foundational tasks (adjust based on your project):
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
+<!--
+  gameQA Constitution (Principle V): For any numeric success criterion, include a corresponding
+  performance regression test. For any capture/session feature, include a session integrity test
+  covering abnormal shutdown, disk-full, and thread-panic scenarios.
+-->
+
 - [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
 - [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T011b [P] [US1] Performance regression test for [numeric criterion] in tests/perf/test_[name].py
+- [ ] T011c [P] [US1] Session integrity test (shutdown/disk-full/panic) in tests/integration/test_session_integrity.py
 
 ### Implementation for User Story 1
 

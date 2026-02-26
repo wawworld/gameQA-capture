@@ -31,7 +31,20 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] **I. Non-Intrusion**: Design uses no game-process intrusion technique (injection, hooking,
+      memory write, DLL attachment). Verify every capture path.
+- [ ] **II. Latency Priority**: Latency impact assessed for every pipeline stage; any throughput
+      trade-off is documented with explicit written justification.
+- [ ] **III. Interface-First**: All replaceable components (capture backend, serializer, storage)
+      are designed behind interfaces; no upper layer references a concrete implementation directly.
+- [ ] **IV. Safe Code**: No `unwrap()`/`expect()` in production paths; all tunables declared in
+      profile files; no global mutable state; clock sources typed (monotonic vs. wall-clock).
+- [ ] **V. Test Gates**: Automated performance regression tests planned for every numeric success
+      criterion; session integrity tests cover abnormal-shutdown / disk-full / thread-panic scenarios.
+- [ ] **VI. Observability**: Runtime metric collection points identified for capture latency, queue
+      depth, orphan event count, and session completion rate; debug mode runs independently.
+- [ ] **VII. Minimum Privilege**: Required OS permissions listed and justified; WRITE, DEBUG, and
+      memory-map access to game processes are absent from the design.
 
 ## Project Structure
 

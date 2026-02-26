@@ -109,6 +109,13 @@
 
 ### Measurable Outcomes
 
+<!--
+  gameQA Constitution (Principle V): Every numeric success criterion listed here MUST be covered
+  by an automated performance regression test. CI must fail if a regression occurs.
+  Examples of required latency/throughput metrics: capture latency p95, frame-interval accuracy,
+  event-queue drain time. Non-numeric UX criteria are also valid SC entries.
+-->
+
 - **SC-001**: [Measurable metric, e.g., "Users can complete account creation in under 2 minutes"]
 - **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
 - **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
