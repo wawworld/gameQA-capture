@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd.exe /c \"where cargo 2>&1\")",
+      "Bash(powershell.exe -Command \"& { $env:PATH += '';C:\\\\Users\\\\changhoonpark\\\\.cargo\\\\bin;C:\\\\Program Files\\\\Rust stable MSVC\\\\bin''; Get-Command cargo -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source }\")",
+      "Bash(powershell.exe -Command \"C:\\\\vcpkg\\\\vcpkg.exe install ffmpeg:x64-windows --host-triplet=x64-windows 2>&1\")"
+    ]
+  }
+}

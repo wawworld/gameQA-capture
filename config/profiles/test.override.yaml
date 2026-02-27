@@ -1,0 +1,16 @@
+# test.override.yaml — Test profile overrides.
+# Short sessions for pipeline validation.  End timestamps suppressed.
+
+capture:
+  diagnostics_enabled: true   # enable dxgi_acquire_ts and buffer_ready_ts in test
+
+session:
+  record_epoch_perf_pair_on_end: false   # ts_wall_end_ns / ts_mono_end_ns absent in test profile
+  detection_timeout_seconds: 30.0
+  roi_stable_seconds: 1.0
+
+trigger:
+  timeout_seconds: 300.0   # 5-minute max in test mode
+
+automation:
+  enabled: false

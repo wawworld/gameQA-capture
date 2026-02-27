@@ -1,0 +1,7 @@
+[target.x86_64-pc-windows-msvc]
+linker = "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/link.exe"
+
+[env]
+VCPKG_ROOT = "C:/vcpkg"
+VCPKG_DEFAULT_HOST_TRIPLET = "x64-windows"
+LIBCLANG_PATH = "C:/Program Files/LLVM/bin"

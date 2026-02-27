@@ -1,0 +1,154 @@
+[package]
+name = "game-qa"
+version = "0.1.0"
+edition = "2024"
+description = "Non-intrusive game data collection pipeline for Chrome Dino"
+rust-version = "1.85"
+
+[[bin]]
+name = "game-qa"
+path = "src/main.rs"
+
+[features]
+# Enable H.264/MP4 recording (requires FFmpeg dev libs: FFMPEG_DIR or vcpkg)
+ffmpeg = ["dep:ffmpeg-next"]
+# Enable OpenCV template matching (requires OpenCV + LLVM x64 libclang)
+opencv = ["dep:opencv"]
+
+[dependencies]
+# Windows API bindings — DXGI Desktop Duplication, WinAPI
+windows = { version = "0.58", features = [
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Graphics_Direct3D11",
+    "Win32_System_Threading",
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Diagnostics_Debug",
+] }
+
+# High-level DXGI capture wrapper
+win_desktop_duplication = "0.10"
+
+# WH_KEYBOARD_LL / WH_MOUSE_LL hooks with dedicated message-loop threads
+willhook = "0.6"
+
+# H.264/MP4 off-thread video encoding (optional — requires FFmpeg dev libs)
+ffmpeg-next = { version = "8", optional = true }
+
+# Template matching for ROI detection (optional — requires OpenCV + libclang)
+opencv = { version = "0.98", features = ["clang-runtime"], optional = true }
+
+# Lock-free MPSC ring buffer with drop-oldest semantics
+thingbuf = "0.1"
+
+# YAML parsing for config hierarchy
+serde_yaml = "0.9"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Bounded MPSC channel for hook→queue pipeline
+crossbeam-channel = "0.5"
+
+# Error handling
+thiserror = "1"
+
+[dev-dependencies]
+# Performance regression tests
+criterion = { version = "0.5", features = ["html_reports"] }
+tempfile = "3"
+
+# ── Unit tests ──
+[[test]]
+name = "capture_backend_mock"
+path = "tests/unit/capture_backend_mock.rs"
+
+[[test]]
+name = "frame_consumer_mock"
+path = "tests/unit/frame_consumer_mock.rs"
+
+[[test]]
+name = "trigger_mock"
+path = "tests/unit/trigger_mock.rs"
+
+[[test]]
+name = "config_merge"
+path = "tests/unit/config_merge.rs"
+
+[[test]]
+name = "roi_state_machine"
+path = "tests/unit/roi_state_machine.rs"
+
+# ── Performance regression tests ──
+[[test]]
+name = "capture_latency"
+path = "tests/perf/capture_latency.rs"
+
+[[test]]
+name = "frame_consistency"
+path = "tests/perf/frame_consistency.rs"
+
+[[test]]
+name = "hook_latency"
+path = "tests/perf/hook_latency.rs"
+
+[[test]]
+name = "realtime_e2e"
+path = "tests/perf/realtime_e2e.rs"
+
+[[test]]
+name = "scheduling_drift"
+path = "tests/perf/scheduling_drift.rs"
+
+[[test]]
+name = "game_fps_impact"
+path = "tests/perf/game_fps_impact.rs"
+
+# ── Integration tests ──
+[[test]]
+name = "session_complete"
+path = "tests/integration/session_complete.rs"
+
+[[test]]
+name = "session_integrity"
+path = "tests/integration/session_integrity.rs"
+
+[[test]]
+name = "non_intrusion"
+path = "tests/integration/non_intrusion.rs"
+
+[[test]]
+name = "batch_automation"
+path = "tests/integration/batch_automation.rs"
+
+[[bench]]
+name = "capture_latency"
+harness = false
+
+[[bench]]
+name = "frame_consistency"
+harness = false
+
+[[bench]]
+name = "hook_latency"
+harness = false
+
+[[bench]]
+name = "realtime_e2e"
+harness = false
+
+[[bench]]
+name = "scheduling_drift"
+harness = false
+
+[[bench]]
+name = "game_fps_impact"
+harness = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

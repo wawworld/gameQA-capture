@@ -1,0 +1,70 @@
+# base.yaml — All default values for the capture pipeline.
+# ALL tunables live here; no hardcoded defaults in source code (Principle IV).
+
+capture:
+  target_fps: 30
+  crop_to_window: true
+  crop_mode: client_area
+  diagnostics_enabled: false
+  backend: dxgi
+
+roi:
+  reference_images: []
+  match_threshold: 0.75
+  min_width_px: 400
+  min_height_px: 150
+  padding_px: 20
+  clamp_to_monitor: true
+  lock_after_first_success: true
+  max_roi_jump_px: 30
+  reacquire_confirm_frames: 2
+  reacquire_grace_seconds: 5.0
+
+session:
+  require_roi_detected: true
+  roi_stable_seconds: 1.0
+  detection_timeout_seconds: 30.0
+  preroll_seconds: 2.0
+  require_window_foreground: true
+  pause_when_background: true
+  background_grace_seconds: 3.0
+  record_epoch_perf_pair_on_end: false
+
+trigger:
+  stop_key: 0x78   # VK_F9
+  timeout_seconds: 300.0
+  game_over_template: ~   # null = disabled in base
+  window_lost_grace_seconds: 5.0
+
+events:
+  enabled_event_types:
+    - keyboard_press
+    - keyboard_release
+    - mouse_move
+    - mouse_click
+    - mouse_scroll
+  mouse_move:
+    max_hz: 20
+    min_delta_px: 5
+
+consumer:
+  recording_enabled: true
+  realtime_enabled: false
+  ring_buffer_capacity: 3
+
+automation:
+  enabled: false
+  mode: batch_recording
+  restart_delay_seconds: 3.0
+  max_consecutive_failures: 3
+  quarantine_on_failure: true
+  target_session_count: 600
+
+disk_protection:
+  enabled: true
+  check_interval_seconds: 60
+  warning_threshold_gb: 20
+  halt_threshold_gb: 10
+
+debug:
+  enabled: false

@@ -1,0 +1,33 @@
+# Rust build artifacts
+/target/
+debug/
+release/
+*.rs.bk
+*.rlib
+
+# Profiling artifacts
+*.prof*
+perf.data*
+flamegraph.svg
+
+# Session data (large, not versioned)
+/data/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Environment / secrets
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Criterion benchmark artifacts
+criterion/

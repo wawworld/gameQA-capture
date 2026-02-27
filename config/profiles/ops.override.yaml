@@ -1,0 +1,23 @@
+# ops.override.yaml — Ops (batch collection) profile overrides.
+
+capture:
+  diagnostics_enabled: true
+
+session:
+  record_epoch_perf_pair_on_end: true   # ts_wall_end_ns + ts_mono_end_ns required
+
+trigger:
+  timeout_seconds: 300.0   # 5-minute sessions
+
+automation:
+  enabled: true
+  mode: batch_recording
+  restart_delay_seconds: 3.0
+  max_consecutive_failures: 3
+  quarantine_on_failure: true
+  target_session_count: 600
+
+consumer:
+  recording_enabled: true
+  realtime_enabled: false
+  ring_buffer_capacity: 3

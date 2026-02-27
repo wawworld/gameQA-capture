@@ -1,0 +1,23 @@
+# bot.override.yaml — Bot (real-time inference) profile overrides.
+
+capture:
+  diagnostics_enabled: true
+
+session:
+  record_epoch_perf_pair_on_end: true
+
+trigger:
+  timeout_seconds: 600.0   # 10-minute sessions for bot runs
+
+consumer:
+  recording_enabled: false    # bot profile: real-time only (disk recording off)
+  realtime_enabled: true
+  ring_buffer_capacity: 2     # tight ring buffer for low-latency bot reads
+
+automation:
+  enabled: true
+  mode: realtime_bot
+  restart_delay_seconds: 3.0
+  max_consecutive_failures: 3
+  quarantine_on_failure: true
+  target_session_count: 600

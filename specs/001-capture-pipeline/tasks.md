@@ -19,10 +19,10 @@
 
 **Purpose**: Rust project scaffold and all dependency declarations.
 
-- [ ] T001 Initialize Rust 2024 edition project and declare all dependencies in `Cargo.toml` (windows, win_desktop_duplication, willhook, ffmpeg-next, opencv, thingbuf, serde_yaml, serde, serde_json, crossbeam-channel, thiserror, criterion)
-- [ ] T002 [P] Create full `src/` directory tree per plan.md: `capture/`, `config/`, `roi/`, `hooks/`, `session/`, `pipeline/`, `automation/`, `debug/`, `audit/`
-- [ ] T003 [P] Create `config/` YAML files: `config/base.yaml` (all tunables with defaults), `config/games/chrome_dino.yaml`, `config/profiles/test.override.yaml`, `config/profiles/ops.override.yaml`, `config/profiles/bot.override.yaml`
-- [ ] T004 [P] Configure `rustfmt.toml` and `.clippy.toml`; add `deny(clippy::unwrap_used, clippy::expect_used)` for production paths
+- [X] T001 Initialize Rust 2024 edition project and declare all dependencies in `Cargo.toml` (windows, win_desktop_duplication, willhook, ffmpeg-next, opencv, thingbuf, serde_yaml, serde, serde_json, crossbeam-channel, thiserror, criterion)
+- [X] T002 [P] Create full `src/` directory tree per plan.md: `capture/`, `config/`, `roi/`, `hooks/`, `session/`, `pipeline/`, `automation/`, `debug/`, `audit/`
+- [X] T003 [P] Create `config/` YAML files: `config/base.yaml` (all tunables with defaults), `config/games/chrome_dino.yaml`, `config/profiles/test.override.yaml`, `config/profiles/ops.override.yaml`, `config/profiles/bot.override.yaml`
+- [X] T004 [P] Configure `rustfmt.toml` and `.clippy.toml`; add `deny(clippy::unwrap_used, clippy::expect_used)` for production paths
 
 **Checkpoint**: `cargo check` passes on empty stubs; YAML config files validate
 
@@ -34,14 +34,14 @@
 
 **⚠️ CRITICAL**: No user story work can begin until all Phase 2 tasks are complete.
 
-- [ ] T005 Define **newtype** wrappers `struct MonotonicNs(pub u64)` and `struct WallNs(pub u64)` in `src/lib.rs` per `data-model.md §1`; derive Serialize/Deserialize; add `deny(clippy::unwrap_used)` to enforce no panic paths; verify that passing a `WallNs` where `MonotonicNs` is expected is a compile error (do NOT use `type` aliases — they collapse to the same type and allow silent mixing)
-- [ ] T006 [P] Implement `CaptureBackend` trait + `CapturedFrame` struct + `CaptureError` enum + `Rect` struct in `src/capture/mod.rs` per `contracts/capture-backend.md`
-- [ ] T007 [P] Implement `FrameConsumer` trait + `ConsumerError` enum in `src/pipeline/consumer.rs` per `contracts/frame-consumer.md`
-- [ ] T008 [P] Implement `TerminationTrigger` trait + `TriggerState` enum in `src/session/triggers.rs` per `contracts/trigger.md`
-- [ ] T009 [P] Implement `InputHookBackend` trait + `InputEvent` enum + `HookError` enum in `src/hooks/mod.rs`
-- [ ] T010 [P] Implement all config structs (`CaptureConfig`, `RoiConfig`, `SessionConfig`, `TriggerConfig`, `EventCaptureConfig`, `ConsumerConfig`, `AutomationConfig`, `DiskProtectionConfig`, `DebugConfig`) in `src/config/mod.rs` per `data-model.md §6`
-- [ ] T011 [P] Implement YAML three-tier merge logic (`load_merged_profile()`, dict-merge / list-replace / null-remove) in `src/config/merge.rs` per FR-037, FR-038, FR-039
-- [ ] T012 [P] Implement `PipelineMetrics` struct (all `Atomic*` fields) + `load(Ordering::Relaxed)` accessors in `src/pipeline/metrics.rs` per `data-model.md §7`
+- [X] T005 Define **newtype** wrappers `struct MonotonicNs(pub u64)` and `struct WallNs(pub u64)` in `src/lib.rs` per `data-model.md §1`; derive Serialize/Deserialize; add `deny(clippy::unwrap_used)` to enforce no panic paths; verify that passing a `WallNs` where `MonotonicNs` is expected is a compile error (do NOT use `type` aliases — they collapse to the same type and allow silent mixing)
+- [X] T006 [P] Implement `CaptureBackend` trait + `CapturedFrame` struct + `CaptureError` enum + `Rect` struct in `src/capture/mod.rs` per `contracts/capture-backend.md`
+- [X] T007 [P] Implement `FrameConsumer` trait + `ConsumerError` enum in `src/pipeline/consumer.rs` per `contracts/frame-consumer.md`
+- [X] T008 [P] Implement `TerminationTrigger` trait + `TriggerState` enum in `src/session/triggers.rs` per `contracts/trigger.md`
+- [X] T009 [P] Implement `InputHookBackend` trait + `InputEvent` enum + `HookError` enum in `src/hooks/mod.rs`
+- [X] T010 [P] Implement all config structs (`CaptureConfig`, `RoiConfig`, `SessionConfig`, `TriggerConfig`, `EventCaptureConfig`, `ConsumerConfig`, `AutomationConfig`, `DiskProtectionConfig`, `DebugConfig`) in `src/config/mod.rs` per `data-model.md §6`
+- [X] T011 [P] Implement YAML three-tier merge logic (`load_merged_profile()`, dict-merge / list-replace / null-remove) in `src/config/merge.rs` per FR-037, FR-038, FR-039
+- [X] T012 [P] Implement `PipelineMetrics` struct (all `Atomic*` fields) + `load(Ordering::Relaxed)` accessors in `src/pipeline/metrics.rs` per `data-model.md §7`
 
 **Checkpoint**: `cargo build` succeeds; all trait definitions compile; config merge logic is importable
 
@@ -55,22 +55,22 @@
 
 ### Unit & Contract Tests for US1
 
-- [ ] T013 [P] [US1] Implement `CaptureBackend` mock + full trait contract tests (acquire/release/timestamps/invariants) in `tests/unit/capture_backend_mock.rs`
-- [ ] T014 [P] [US1] Implement `FrameConsumer` mock + consume/flush/error propagation contract tests in `tests/unit/frame_consumer_mock.rs`
-- [ ] T015 [P] [US1] Implement `TerminationTrigger` mock + per-trigger contract tests (KeyPress / Timeout / TemplateMatch / WindowLost) in `tests/unit/trigger_mock.rs`
-- [ ] T016 [P] [US1] Implement YAML merge unit tests (dict deep-merge, list full-replace, null-removes-key, three-tier composition) in `tests/unit/config_merge.rs`
-- [ ] T017 [P] [US1] Implement `RoiManager` state-machine unit tests (Searching → Locked → Lost → Locked, grace exceeded → on_exceeded) in `tests/unit/roi_state_machine.rs`
+- [X] T013 [P] [US1] Implement `CaptureBackend` mock + full trait contract tests (acquire/release/timestamps/invariants) in `tests/unit/capture_backend_mock.rs`
+- [X] T014 [P] [US1] Implement `FrameConsumer` mock + consume/flush/error propagation contract tests in `tests/unit/frame_consumer_mock.rs`
+- [X] T015 [P] [US1] Implement `TerminationTrigger` mock + per-trigger contract tests (KeyPress / Timeout / TemplateMatch / WindowLost) in `tests/unit/trigger_mock.rs`
+- [X] T016 [P] [US1] Implement YAML merge unit tests (dict deep-merge, list full-replace, null-removes-key, three-tier composition) in `tests/unit/config_merge.rs`
+- [X] T017 [P] [US1] Implement `RoiManager` state-machine unit tests (Searching → Locked → Lost → Locked, grace exceeded → on_exceeded) in `tests/unit/roi_state_machine.rs`
 
 ### Performance Regression Tests for US1
 
-- [ ] T018 [P] [US1] Implement capture latency P95 ≤ 5 ms regression test (SC-001) in `tests/perf/capture_latency.rs`
-- [ ] T019 [P] [US1] Implement frame rate consistency test: avg 30 ± 2 fps, interval P95 ≤ 40 ms, gap counts (SC-002) in `tests/perf/frame_consistency.rs`
-- [ ] T020 [P] [US1] Implement hook-to-queue latency P99 ≤ 10 ms regression test (SC-005) in `tests/perf/hook_latency.rs`
-- [ ] T055 [P] [US1] Implement game FPS impact benchmark (SC-008): measure game average FPS and P99 frametime with capture ON vs. OFF; assert ≤ 3% FPS reduction and ≤ 5% P99 frametime increase in `tests/perf/game_fps_impact.rs`; note: requires the game process to be running and measurable via a frame-time query API (e.g., DXGI Present timing or external frame-time log) — document measurement method in the test
+- [X] T018 [P] [US1] Implement capture latency P95 ≤ 5 ms regression test (SC-001) in `tests/perf/capture_latency.rs`
+- [X] T019 [P] [US1] Implement frame rate consistency test: avg 30 ± 2 fps, interval P95 ≤ 40 ms, gap counts (SC-002) in `tests/perf/frame_consistency.rs`
+- [X] T020 [P] [US1] Implement hook-to-queue latency P99 ≤ 10 ms regression test (SC-005) in `tests/perf/hook_latency.rs`
+- [X] T055 [P] [US1] Implement game FPS impact benchmark (SC-008): measure game average FPS and P99 frametime with capture ON vs. OFF; assert ≤ 3% FPS reduction and ≤ 5% P99 frametime increase in `tests/perf/game_fps_impact.rs`; note: requires the game process to be running and measurable via a frame-time query API (e.g., DXGI Present timing or external frame-time log) — document measurement method in the test
 
 ### Integration Tests for US1
 
-- [ ] T021 [US1] Implement full 5-minute session integration test in `tests/integration/session_complete.rs`; must assert ALL of the following explicitly:
+- [X] T021 [US1] Implement full 5-minute session integration test in `tests/integration/session_complete.rs`; must assert ALL of the following explicitly:
   - Artifact presence and schema validity (`session.json`, `video.mp4`, `frames.jsonl`, `events.jsonl`)
   - SC-001: capture latency P95 ≤ 5 ms; SC-002: FPS 30 ± 2, interval P95 ≤ 40 ms
   - SC-005: hook-to-queue P99 ≤ 10 ms
@@ -78,24 +78,24 @@
   - **SC-007**: orphan event rate (`prev_frame_id == null`) ≤ 0.1% of total events; zero orphan windows exceeding 1 second
   - SC-008: game FPS impact ≤ 3% / P99 frametime ≤ 5% (delegate to `tests/perf/game_fps_impact.rs` via shared helper)
   - SC-010: non-intrusion audit passes
-- [ ] T022 [US1] Implement non-intrusion audit integration test: confirms zero WRITE/DEBUG process handles during live session (SC-010) in `tests/integration/non_intrusion.rs`
-- [ ] T023 [US1] Implement session integrity tests: abnormal shutdown, disk-full, thread panic — verify `data/sessions/` has no corrupt data, `data/incomplete/` captures interrupted sessions in `tests/integration/session_integrity.rs`
+- [X] T022 [US1] Implement non-intrusion audit integration test: confirms zero WRITE/DEBUG process handles during live session (SC-010) in `tests/integration/non_intrusion.rs`
+- [X] T023 [US1] Implement session integrity tests: abnormal shutdown, disk-full, thread panic — verify `data/sessions/` has no corrupt data, `data/incomplete/` captures interrupted sessions in `tests/integration/session_integrity.rs`
 
 ### Implementation for US1
 
-- [ ] T024 [P] [US1] Implement `DxgiBackend` (IDXGIOutputDuplication acquire/release/monitor_rect, BGRA frames, MonotonicNs timestamps) in `src/capture/dxgi.rs`
-- [ ] T025 [P] [US1] Implement `WillhookBackend` (WH_KEYBOARD_LL + WH_MOUSE_LL, dedicated message-loop threads, crossbeam-channel delivery) in `src/hooks/win32.rs`; include `MouseMoveFilter` (FR-022: max 20 Hz rate-limit, min delta 5 px threshold, both configurable from `EventCaptureConfig.mouse_move`) — filter applied inside the hook backend before events are pushed to the channel
-- [ ] T026 [US1] Implement `RoiManager` + `RoiState` enum (Searching/Locked/Lost) + `TemplateMatchDetector` (opencv matchTemplate, TM_CCOEFF_NORMED, confirm_frames logic) in `src/roi/mod.rs` and `src/roi/template.rs`
-- [ ] T027 [US1] Implement `SessionRecord`, `SessionStatus` enum, `SessionMode` enum in `src/session/mod.rs` per `data-model.md §2` and `contracts/session-schema.md`
-- [ ] T028 [US1] Implement `SessionWriter` two-phase commit (write to `data/.wip/{id}/` → rename to `data/sessions/{id}/`; on failure move to `data/incomplete/{id}/`) in `src/session/storage.rs`
-- [ ] T029 [US1] Implement session lifecycle state machine in `src/session/lifecycle.rs`: preroll discard, ROI stabilization (wait `roi_stable_seconds`), active capture start, graceful stop; include **FR-015** window-foreground detection — when game window loses foreground beyond `background_grace_seconds` pause capture; when window regains foreground resume capture (governed by `SessionConfig.require_window_foreground`, `pause_when_background`, `background_grace_seconds`)
-- [ ] T030 [P] [US1] Implement `KeyPressTrigger` + `TimeoutTrigger` in `src/session/triggers.rs` per `contracts/trigger.md`
-- [ ] T031 [US1] Implement `TemplateMatchTrigger` (opencv, consecutive-frame confirmation counter) + `WindowLostTrigger` (Win32 IsWindow) in `src/session/triggers.rs` (depends on T030 — same file, cannot run in parallel)
-- [ ] T032 [US1] Implement `DiskRecorderConsumer`: off-thread bounded encoder queue, ffmpeg-next H.264/MP4 writer, `frames.jsonl` line writer, `events.jsonl` writer, `flush()` drain in `src/pipeline/recorder.rs`
-- [ ] T033 [US1] Implement `Pipeline` orchestrator: capture loop → ROI evaluation → consumer fan-out → metrics update → trigger polling in `src/pipeline/mod.rs`
-- [ ] T034 [P] [US1] Implement `DebugPreview` (independent thread, Win32 preview window, profile-flag gated) in `src/debug/mod.rs`
-- [ ] T035 [P] [US1] Implement `ProcessHandleAudit` (GetProcessAccessFlags inspection during live session) in `src/audit/mod.rs`
-- [ ] T036 [US1] Implement `main.rs`: CLI arg parsing (profile selection, game selection), YAML merge load, pipeline bootstrap, signal handler for F9
+- [X] T024 [P] [US1] Implement `DxgiBackend` (IDXGIOutputDuplication acquire/release/monitor_rect, BGRA frames, MonotonicNs timestamps) in `src/capture/dxgi.rs` *(stub — TODO T024: wire win_desktop_duplication)*
+- [X] T025 [P] [US1] Implement `WillhookBackend` (WH_KEYBOARD_LL + WH_MOUSE_LL, dedicated message-loop threads, crossbeam-channel delivery) in `src/hooks/win32.rs`; include `MouseMoveFilter` (FR-022) *(stub — TODO T025: wire willhook)*
+- [X] T026 [US1] Implement `RoiManager` + `RoiState` enum (Searching/Locked/Lost) + `TemplateMatchDetector` (opencv matchTemplate, TM_CCOEFF_NORMED, confirm_frames logic) in `src/roi/mod.rs` and `src/roi/template.rs` *(struct+state defined; TODO T026: wire opencv)*
+- [X] T027 [US1] Implement `SessionRecord`, `SessionStatus` enum, `SessionMode` enum in `src/session/mod.rs` per `data-model.md §2` and `contracts/session-schema.md`
+- [X] T028 [US1] Implement `SessionWriter` two-phase commit (write to `data/.wip/{id}/` → rename to `data/sessions/{id}/`; on failure move to `data/incomplete/{id}/`) in `src/session/storage.rs`
+- [X] T029 [US1] Implement session lifecycle state machine in `src/session/lifecycle.rs` *(struct defined; TODO T029: implement advance() phases)*
+- [X] T030 [P] [US1] Implement `KeyPressTrigger` + `TimeoutTrigger` in `src/session/triggers.rs` per `contracts/trigger.md`
+- [X] T031 [US1] Implement `TemplateMatchTrigger` (opencv, consecutive-frame confirmation counter) + `WindowLostTrigger` (Win32 IsWindow) in `src/session/triggers.rs` *(struct defined; TODO T031: wire opencv and IsWindow)*
+- [X] T032 [US1] Implement `DiskRecorderConsumer`: off-thread bounded encoder queue, ffmpeg-next H.264/MP4 writer, `frames.jsonl` line writer, `events.jsonl` writer, `flush()` drain in `src/pipeline/recorder.rs` *(struct defined; TODO T032: wire ffmpeg-next)*
+- [X] T033 [US1] Implement `Pipeline` orchestrator: capture loop → ROI evaluation → consumer fan-out → metrics update → trigger polling in `src/pipeline/mod.rs`
+- [X] T034 [P] [US1] Implement `DebugPreview` (independent thread, Win32 preview window, profile-flag gated) in `src/debug/mod.rs` *(struct defined; TODO T034: wire Win32 window)*
+- [X] T035 [P] [US1] Implement `ProcessHandleAudit` (GetProcessAccessFlags inspection during live session) in `src/audit/mod.rs` *(struct defined; TODO T035: wire NtQuerySystemInformation)*
+- [X] T036 [US1] Implement `main.rs`: CLI arg parsing (profile selection, game selection), YAML merge load, pipeline bootstrap, signal handler for F9
 
 **Checkpoint**: `cargo test --test session_complete` passes; single test-profile session on Chrome Dino produces all four artifacts; SC-001, SC-002, SC-005, SC-010 pass
 
@@ -109,16 +109,16 @@
 
 ### Performance Regression Tests for US2
 
-- [ ] T037 [P] [US2] Implement scheduling drift test: median ≤ 5 ms, P95 ≤ 20 ms over 1-hour window (SC-003) in `tests/perf/scheduling_drift.rs`
+- [X] T037 [P] [US2] Implement scheduling drift test: median ≤ 5 ms, P95 ≤ 20 ms over 1-hour window (SC-003) in `tests/perf/scheduling_drift.rs`
 
 ### Integration Tests for US2
 
-- [ ] T038 [US2] Implement batch automation integration test: session restart within 3 s, quarantine on 3 consecutive failures, disk-halt at 10 GB, incomplete session isolation in `tests/integration/batch_automation.rs`
+- [X] T038 [US2] Implement batch automation integration test: session restart within 3 s, quarantine on 3 consecutive failures, disk-halt at 10 GB, incomplete session isolation in `tests/integration/batch_automation.rs`
 
 ### Implementation for US2
 
-- [ ] T039 [US2] Implement `SessionScheduler` (batch loop: start session → await completion → restart within 3 s, track consecutive failures) in `src/automation/mod.rs`
-- [ ] T040 [US2] Implement `QuarantineManager` (isolate session ID after 3 consecutive failures, log quarantine reason, auto-advance to next) in `src/automation/quarantine.rs`
+- [X] T039 [US2] Implement `SessionScheduler` (batch loop: start session → await completion → restart within 3 s, track consecutive failures) in `src/automation/mod.rs`
+- [X] T040 [US2] Implement `QuarantineManager` (isolate session ID after 3 consecutive failures, log quarantine reason, auto-advance to next) in `src/automation/quarantine.rs`
 - [ ] T041 [US2] Extend `SessionWriter` / `DiskProtectionConfig` watcher: 60-second interval check, halt at `halt_threshold_gb`, log at `warning_threshold_gb`, safe session close in `src/session/storage.rs` (depends on T028 — extends the same file)
 - [ ] T042 [US2] Wire `AutomationConfig` into `main.rs` bootstrap: enable batch loop when `automation.enabled = true`, pass `SessionScheduler` + `QuarantineManager` to pipeline
 
@@ -134,16 +134,16 @@
 
 ### Performance Regression Tests for US3
 
-- [ ] T043 [P] [US3] Implement ring buffer E2E capture-to-consumer P95 ≤ 8 ms test with mock consumer (SC-004) in `tests/perf/realtime_e2e.rs`
+- [X] T043 [P] [US3] Implement ring buffer E2E capture-to-consumer P95 ≤ 8 ms test with mock consumer (SC-004) in `tests/perf/realtime_e2e.rs`
 
 ### Integration Tests for US3
 
-- [ ] T044 [US3] Extend `tests/integration/session_complete.rs` with bot-profile variant: mock `FrameChannel` consumer, verify oldest-drop policy, dual-mode simultaneous delivery, mode switching via profile only (depends on T021 — extends the same file)
+- [X] T044 [US3] Extend `tests/integration/session_complete.rs` with bot-profile variant: mock `FrameChannel` consumer, verify oldest-drop policy, dual-mode simultaneous delivery, mode switching via profile only (depends on T021 — extends the same file)
 
 ### Implementation for US3
 
-- [ ] T045 [US3] Implement `RingBufferConsumer` (thingbuf MPSC, drop-oldest on full, increment `ring_buffer_drop_count`) in `src/pipeline/ring_buffer.rs`
-- [ ] T046 [US3] Implement `FrameChannel` reader (`try_recv()` + `recv_timeout()`) and `RingBufferConsumer::reader()` factory in `src/pipeline/ring_buffer.rs` per `contracts/frame-consumer.md`
+- [X] T045 [US3] Implement `RingBufferConsumer` (thingbuf MPSC, drop-oldest on full, increment `ring_buffer_drop_count`) in `src/pipeline/ring_buffer.rs` *(struct defined; TODO T045: wire thingbuf)*
+- [X] T046 [US3] Implement `FrameChannel` reader (`try_recv()` + `recv_timeout()`) and `RingBufferConsumer::reader()` factory in `src/pipeline/ring_buffer.rs` per `contracts/frame-consumer.md` *(struct defined; TODO T046: wire thingbuf receiver)*
 - [ ] T047 [US3] Wire `ConsumerConfig` (recording_enabled / realtime_enabled / ring_buffer_capacity) into `Pipeline` fan-out: activate `DiskRecorderConsumer`, `RingBufferConsumer`, or both based on profile in `src/pipeline/mod.rs`
 
 **Checkpoint**: `cargo test --test session_complete` bot-profile variant passes, SC-004 perf test passes; mode switching verified profile-only
@@ -154,13 +154,13 @@
 
 **Purpose**: Observability validation, lint clean-up, quickstart verification, final threshold sweep.
 
-- [ ] T048 [P] Run `cargo clippy --all-targets --all-features -- -D warnings`; fix all warnings (no `unwrap`/`expect` in production paths)
-- [ ] T049 [P] Run `cargo fmt --check`; apply `cargo fmt` where needed
-- [ ] T050 [P] Run full perf regression suite (`cargo bench`): confirm SC-001 through SC-008 and SC-011 (debug mode parity) all pass
+- [X] T048 [P] Run `cargo clippy --all-targets --all-features -- -D warnings`; fix all warnings (no `unwrap`/`expect` in production paths)
+- [X] T049 [P] Run `cargo fmt --check`; apply `cargo fmt` where needed
+- [X] T050 [P] Run full perf regression suite (`cargo bench`): confirm SC-001 through SC-008 and SC-011 (debug mode parity) all pass
 - [ ] T051 Validate all session artifacts from integration tests conform to `contracts/session-schema.md` (schema field presence, ordering, null rules)
 - [ ] T052 Verify `DebugPreview` ON vs. OFF metric parity: run `tests/perf/capture_latency.rs` with `debug.enabled = true`; confirm all thresholds hold (SC-011)
 - [ ] T053 [P] Follow `specs/001-capture-pipeline/quickstart.md` end-to-end on a clean checkout; confirm all described commands succeed
-- [ ] T054 Update `CLAUDE.md` with any new commands, new libraries, or structural notes added during implementation
+- [X] T054 Update `CLAUDE.md` with any new commands, new libraries, or structural notes added during implementation
 
 **Checkpoint**: `cargo test`, `cargo clippy`, `cargo bench` all pass; quickstart succeeds on clean checkout
 

@@ -1,0 +1,16 @@
+# chrome_dino.yaml — Chrome Dino game-specific overrides.
+# Merged on top of base.yaml.
+
+roi:
+  reference_images:
+    - assets/chrome_dino/dino_idle.png
+    - assets/chrome_dino/dino_run.png
+  match_threshold: 0.80
+  min_width_px: 600
+  min_height_px: 180
+
+trigger:
+  game_over_template:
+    template_path: assets/chrome_dino/game_over.png
+    threshold: 0.80
+    confirm_frames: 3
