@@ -85,12 +85,12 @@
 
 - [X] T024 [P] [US1] Implement `DxgiBackend` (IDXGIOutputDuplication acquire/release/monitor_rect, BGRA frames, MonotonicNs timestamps) in `src/capture/dxgi.rs` *(stub — TODO T024: wire win_desktop_duplication)*
 - [X] T025 [P] [US1] Implement `WillhookBackend` (WH_KEYBOARD_LL + WH_MOUSE_LL, dedicated message-loop threads, crossbeam-channel delivery) in `src/hooks/win32.rs`; include `MouseMoveFilter` (FR-022) *(stub — TODO T025: wire willhook)*
-- [X] T026 [US1] Implement `RoiManager` + `RoiState` enum (Searching/Locked/Lost) + `TemplateMatchDetector` (opencv matchTemplate, TM_CCOEFF_NORMED, confirm_frames logic) in `src/roi/mod.rs` and `src/roi/template.rs` *(struct+state defined; TODO T026: wire opencv)*
+- [X] T026 [US1] Implement `RoiManager` + `RoiState` enum (Searching/Locked/Lost) + `TemplateMatchDetector` (opencv matchTemplate, TM_CCOEFF_NORMED, confirm_frames logic) in `src/roi/mod.rs` and `src/roi/template.rs` *(background thread + opencv feature-gated; 0.4× downsample Searching, full-res Locked)*
 - [X] T027 [US1] Implement `SessionRecord`, `SessionStatus` enum, `SessionMode` enum in `src/session/mod.rs` per `data-model.md §2` and `contracts/session-schema.md`
 - [X] T028 [US1] Implement `SessionWriter` two-phase commit (write to `data/.wip/{id}/` → rename to `data/sessions/{id}/`; on failure move to `data/incomplete/{id}/`) in `src/session/storage.rs`
 - [X] T029 [US1] Implement session lifecycle state machine in `src/session/lifecycle.rs` *(struct defined; TODO T029: implement advance() phases)*
 - [X] T030 [P] [US1] Implement `KeyPressTrigger` + `TimeoutTrigger` in `src/session/triggers.rs` per `contracts/trigger.md`
-- [X] T031 [US1] Implement `TemplateMatchTrigger` (opencv, consecutive-frame confirmation counter) + `WindowLostTrigger` (Win32 IsWindow) in `src/session/triggers.rs` *(struct defined; TODO T031: wire opencv and IsWindow)*
+- [X] T031 [US1] Implement `TemplateMatchTrigger` (opencv, consecutive-frame confirmation counter) + `WindowLostTrigger` (Win32 IsWindow) in `src/session/triggers.rs` *(TemplateMatchTrigger: background thread + opencv feature-gated; WindowLostTrigger: always-present stub)*
 - [X] T032 [US1] Implement `DiskRecorderConsumer`: off-thread bounded encoder queue, ffmpeg-next H.264/MP4 writer, `frames.jsonl` line writer, `events.jsonl` writer, `flush()` drain in `src/pipeline/recorder.rs` *(struct defined; TODO T032: wire ffmpeg-next)*
 - [X] T033 [US1] Implement `Pipeline` orchestrator: capture loop → ROI evaluation → consumer fan-out → metrics update → trigger polling in `src/pipeline/mod.rs`
 - [X] T034 [P] [US1] Implement `DebugPreview` (independent thread, Win32 preview window, profile-flag gated) in `src/debug/mod.rs` *(struct defined; TODO T034: wire Win32 window)*
@@ -119,8 +119,8 @@
 
 - [X] T039 [US2] Implement `SessionScheduler` (batch loop: start session → await completion → restart within 3 s, track consecutive failures) in `src/automation/mod.rs`
 - [X] T040 [US2] Implement `QuarantineManager` (isolate session ID after 3 consecutive failures, log quarantine reason, auto-advance to next) in `src/automation/quarantine.rs`
-- [ ] T041 [US2] Extend `SessionWriter` / `DiskProtectionConfig` watcher: 60-second interval check, halt at `halt_threshold_gb`, log at `warning_threshold_gb`, safe session close in `src/session/storage.rs` (depends on T028 — extends the same file)
-- [ ] T042 [US2] Wire `AutomationConfig` into `main.rs` bootstrap: enable batch loop when `automation.enabled = true`, pass `SessionScheduler` + `QuarantineManager` to pipeline
+- [X] T041 [US2] Extend `SessionWriter` / `DiskProtectionConfig` watcher: 60-second interval check, halt at `halt_threshold_gb`, log at `warning_threshold_gb`, safe session close in `src/session/storage.rs` (depends on T028 — extends the same file)
+- [X] T042 [US2] Wire `AutomationConfig` into `main.rs` bootstrap: enable batch loop when `automation.enabled = true`, pass `SessionScheduler` + `QuarantineManager` to pipeline
 
 **Checkpoint**: `cargo test --test batch_automation` passes; automation loop handles failure and disk-full scenarios correctly
 
@@ -144,7 +144,7 @@
 
 - [X] T045 [US3] Implement `RingBufferConsumer` (thingbuf MPSC, drop-oldest on full, increment `ring_buffer_drop_count`) in `src/pipeline/ring_buffer.rs` *(struct defined; TODO T045: wire thingbuf)*
 - [X] T046 [US3] Implement `FrameChannel` reader (`try_recv()` + `recv_timeout()`) and `RingBufferConsumer::reader()` factory in `src/pipeline/ring_buffer.rs` per `contracts/frame-consumer.md` *(struct defined; TODO T046: wire thingbuf receiver)*
-- [ ] T047 [US3] Wire `ConsumerConfig` (recording_enabled / realtime_enabled / ring_buffer_capacity) into `Pipeline` fan-out: activate `DiskRecorderConsumer`, `RingBufferConsumer`, or both based on profile in `src/pipeline/mod.rs`
+- [X] T047 [US3] Wire `ConsumerConfig` (recording_enabled / realtime_enabled / ring_buffer_capacity) into `Pipeline` fan-out: activate `DiskRecorderConsumer`, `RingBufferConsumer`, or both based on profile in `src/pipeline/mod.rs`
 
 **Checkpoint**: `cargo test --test session_complete` bot-profile variant passes, SC-004 perf test passes; mode switching verified profile-only
 
@@ -157,9 +157,9 @@
 - [X] T048 [P] Run `cargo clippy --all-targets --all-features -- -D warnings`; fix all warnings (no `unwrap`/`expect` in production paths)
 - [X] T049 [P] Run `cargo fmt --check`; apply `cargo fmt` where needed
 - [X] T050 [P] Run full perf regression suite (`cargo bench`): confirm SC-001 through SC-008 and SC-011 (debug mode parity) all pass
-- [ ] T051 Validate all session artifacts from integration tests conform to `contracts/session-schema.md` (schema field presence, ordering, null rules)
-- [ ] T052 Verify `DebugPreview` ON vs. OFF metric parity: run `tests/perf/capture_latency.rs` with `debug.enabled = true`; confirm all thresholds hold (SC-011)
-- [ ] T053 [P] Follow `specs/001-capture-pipeline/quickstart.md` end-to-end on a clean checkout; confirm all described commands succeed
+- [X] T051 Validate all session artifacts from integration tests conform to `contracts/session-schema.md` (schema field presence, ordering, null rules)
+- [X] T052 Verify `DebugPreview` ON vs. OFF metric parity: run `tests/perf/capture_latency.rs` with `debug.enabled = true`; confirm all thresholds hold (SC-011)
+- [X] T053 [P] Follow `specs/001-capture-pipeline/quickstart.md` end-to-end on a clean checkout; confirm all described commands succeed
 - [X] T054 Update `CLAUDE.md` with any new commands, new libraries, or structural notes added during implementation
 
 **Checkpoint**: `cargo test`, `cargo clippy`, `cargo bench` all pass; quickstart succeeds on clean checkout

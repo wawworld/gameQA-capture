@@ -47,6 +47,23 @@ cargo run --release -- capture --game chrome_dino --profile ops --auto  # batch 
 cargo run --release -- config dump --game chrome_dino --profile test    # dump merged config
 ```
 
+### Feature Flags
+
+| Feature | 기본 | 설명 | 요구사항 |
+|---------|------|------|---------|
+| (없음) | ✓ | 순수 Rust SAD 템플릿 매칭 (`image` 크레이트) | 없음 |
+| `ffmpeg` | | H.264/MP4 비디오 녹화 | `FFMPEG_DIR` + DLL PATH |
+| `opencv` | | 고성능 TM_CCOEFF_NORMED 매칭 | x64 LLVM (`LIBCLANG_PATH`) + OpenCV (`OPENCV_DIR`) |
+
+```sh
+# ARM64 / 기본 환경 (순수 Rust SAD, 비디오 포함)
+cargo build --release --features ffmpeg
+
+# 표준 x64 Windows (opencv 고성능 매칭 + 비디오)
+# 전제: LIBCLANG_PATH=C:\Program Files\LLVM\bin, OPENCV_DIR=C:\vcpkg\installed\x64-windows
+cargo build --release --features ffmpeg,opencv
+```
+
 ## Key Decisions
 
 - **Newtype clocks**: `MonotonicNs(u64)` and `WallNs(u64)` are distinct structs, NOT type aliases — mixing is a compile error.

@@ -26,6 +26,7 @@ windows = { version = "0.58", features = [
     "Win32_UI_WindowsAndMessaging",
     "Win32_System_ProcessStatus",
     "Win32_System_Diagnostics_Debug",
+    "Win32_Storage_FileSystem",
 ] }
 
 # High-level DXGI capture wrapper
@@ -35,10 +36,14 @@ win_desktop_duplication = "0.10"
 willhook = "0.6"
 
 # H.264/MP4 off-thread video encoding (optional — requires FFmpeg dev libs)
-ffmpeg-next = { version = "8", optional = true }
+# Only enable codecs we actually use; avfilter/avdevice not needed for H.264 recording.
+ffmpeg-next = { version = "8", optional = true, default-features = false, features = ["codec", "format", "software-scaling", "software-resampling"] }
 
 # Template matching for ROI detection (optional — requires OpenCV + libclang)
 opencv = { version = "0.98", features = ["clang-runtime"], optional = true }
+
+# Pure-Rust PNG loader for template images (no native libs required)
+image = { version = "0.25", default-features = false, features = ["png"] }
 
 # Lock-free MPSC ring buffer with drop-oldest semantics
 thingbuf = "0.1"
@@ -108,6 +113,10 @@ name = "game_fps_impact"
 path = "tests/perf/game_fps_impact.rs"
 
 # ── Integration tests ──
+[[test]]
+name = "smoke_live"
+path = "tests/integration/smoke_live.rs"
+
 [[test]]
 name = "session_complete"
 path = "tests/integration/session_complete.rs"

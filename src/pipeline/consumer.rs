@@ -4,6 +4,7 @@
 #![deny(clippy::unwrap_used, clippy::expect_used)]
 
 use crate::capture::CapturedFrame;
+use crate::hooks::InputEvent;
 
 /// Errors a `FrameConsumer` implementation may return.
 #[derive(Debug, thiserror::Error)]
@@ -37,4 +38,12 @@ pub trait FrameConsumer: Send {
     /// Called once when the session ends (normal or error). MUST complete all
     /// pending writes before returning.
     fn flush(&mut self) -> Result<(), ConsumerError>;
+
+    /// Forward input events that arrived since the previous frame.
+    ///
+    /// `push_done_ts_ns` is the monotonic nanosecond timestamp at which the
+    /// push completes (used to compute queue-push latency in event records).
+    ///
+    /// Default implementation is a no-op — only recording consumers override this.
+    fn push_events(&mut self, _events: Vec<InputEvent>, _push_done_ts_ns: u64) {}
 }

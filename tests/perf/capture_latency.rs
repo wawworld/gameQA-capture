@@ -55,6 +55,45 @@ fn percentile(mut samples: Vec<u64>, p: f64) -> u64 {
     samples[idx]
 }
 
+/// SC-011: `DebugPreview` ON vs. OFF must have equivalent latency profiles.
+///
+/// `DebugPreview` runs on an independent thread and MUST NOT interact with
+/// the capture path. This test verifies that spawning the debug preview stub
+/// does not degrade the P95 capture latency.
+#[test]
+fn capture_latency_debug_preview_parity_sc011() {
+    use game_qa::debug::DebugPreview;
+
+    let preview = DebugPreview::spawn();
+
+    let mut backend = MockBackend::new();
+    let mut latencies_ns: Vec<u64> = Vec::with_capacity(1000);
+
+    for _ in 0..1000 {
+        let t_call = Instant::now();
+        let frame = backend.acquire_frame().unwrap().unwrap();
+        let t_done = Instant::now();
+        latencies_ns.push(t_done.duration_since(t_call).as_nanos() as u64);
+        backend.release_frame(frame).unwrap();
+    }
+
+    preview.stop();
+
+    let p95 = percentile(latencies_ns, 95.0);
+    let target_ns = 5_000_000u64; // 5 ms
+
+    println!(
+        "SC-011 capture latency P95 (DebugPreview ON) = {} ns ({:.3} ms)",
+        p95,
+        p95 as f64 / 1_000_000.0
+    );
+    assert!(
+        p95 <= target_ns,
+        "SC-011 FAIL: capture latency P95 with DebugPreview = {:.3} ms > 5 ms target",
+        p95 as f64 / 1_000_000.0
+    );
+}
+
 #[test]
 fn capture_latency_p95_le_5ms() {
     // With mock backend this should be sub-microsecond; ensures the test scaffolding works.

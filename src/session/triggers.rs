@@ -5,6 +5,7 @@
 
 use crate::capture::CapturedFrame;
 use crate::hooks::InputEvent;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 /// Decision returned by a trigger each frame.
@@ -113,29 +114,64 @@ impl TerminationTrigger for TimeoutTrigger {
 
 // ─── TemplateMatchTrigger ────────────────────────────────────────────────────
 
+/// Work item sent to the background matchTemplate thread.
+struct TemplateWork {
+    bgra: Vec<u8>,
+    width: u32,
+    height: u32,
+}
+
 /// Terminates the session when a game-over template is matched for `confirm_frames`
-/// consecutive frames above `threshold`.
+/// consecutive background-thread results above `threshold`.
 ///
-/// Uses `opencv::imgproc::match_template` (TM_CCOEFF_NORMED).
-#[allow(dead_code)]
+/// The heavy `matchTemplate` work runs on a dedicated background thread.
+/// The capture thread only does a non-blocking `try_send` + mutex read (~0.1 ms).
 pub struct TemplateMatchTrigger {
-    /// Path to the game-over reference image.
-    template_path: std::path::PathBuf,
-    /// Match score threshold [0.0, 1.0].
     threshold: f32,
-    /// Number of consecutive matches required before firing.
     confirm_frames: u32,
-    /// Current consecutive match counter.
+    /// Consecutive background results that exceed `threshold`.
     consecutive_hits: u32,
+    /// Sender to the background worker. `None` when opencv feature is off.
+    worker_tx: Option<crossbeam_channel::Sender<Option<TemplateWork>>>,
+    /// Latest match score from the background worker.
+    latest_score: Arc<Mutex<Option<f32>>>,
+    /// Background thread handle (for clean shutdown).
+    worker_thread: Option<std::thread::JoinHandle<()>>,
 }
 
 impl TemplateMatchTrigger {
-    pub fn new(template_path: std::path::PathBuf, threshold: f32, confirm_frames: u32) -> Self {
+    pub fn new(
+        template_path: std::path::PathBuf,
+        threshold: f32,
+        confirm_frames: u32,
+    ) -> Self {
+        let latest_score: Arc<Mutex<Option<f32>>> = Arc::new(Mutex::new(None));
+
+        let (worker_tx, worker_thread) = {
+            let (tx, rx) = crossbeam_channel::bounded::<Option<TemplateWork>>(1);
+            let score_arc = Arc::clone(&latest_score);
+
+            let handle = std::thread::Builder::new()
+                .name("tmpl-trigger-worker".to_string())
+                .spawn(move || {
+                    template_trigger_worker(rx, score_arc, template_path, threshold);
+                })
+                .ok();
+
+            if handle.is_some() {
+                (Some(tx), handle)
+            } else {
+                (None, None)
+            }
+        };
+
         Self {
-            template_path,
             threshold,
             confirm_frames,
             consecutive_hits: 0,
+            worker_tx,
+            latest_score,
+            worker_thread,
         }
     }
 }
@@ -143,14 +179,88 @@ impl TemplateMatchTrigger {
 impl TerminationTrigger for TemplateMatchTrigger {
     fn check(
         &mut self,
-        _frame: &CapturedFrame,
+        frame: &CapturedFrame,
         _frame_id: u64,
         _events: &[InputEvent],
     ) -> TriggerState {
-        // TODO(T031): call opencv match_template on frame.data against self.template_path.
-        // For now, never match.
-        self.consecutive_hits = 0;
-        TriggerState::Continue
+        // Read the latest score from the worker (non-blocking).
+        let score = self
+            .latest_score
+            .lock()
+            .ok()
+            .and_then(|mut guard| guard.take());
+
+        // Update consecutive_hits based on the latest result.
+        match score {
+            Some(s) if s >= self.threshold => {
+                self.consecutive_hits += 1;
+            }
+            Some(_) | None => {
+                // No result yet (first frame) or score below threshold.
+                // Only reset if we actually got a "no match" result.
+                if score.is_some() {
+                    self.consecutive_hits = 0;
+                }
+            }
+        }
+
+        // Send the current frame to the worker (non-blocking).
+        if let Some(tx) = &self.worker_tx {
+            let work = TemplateWork {
+                bgra: frame.data.clone(),
+                width: frame.width,
+                height: frame.height,
+            };
+            let _ = tx.try_send(Some(work));
+        }
+
+        if self.consecutive_hits >= self.confirm_frames {
+            TriggerState::Terminate {
+                reason: format!(
+                    "Game-over template matched ({} consecutive, score≥{:.2})",
+                    self.consecutive_hits, self.threshold
+                ),
+                requires_confirmation: false,
+            }
+        } else {
+            TriggerState::Continue
+        }
+    }
+}
+
+impl Drop for TemplateMatchTrigger {
+    fn drop(&mut self) {
+        if let Some(tx) = self.worker_tx.take() {
+            let _ = tx.send(None); // shutdown sentinel
+        }
+        if let Some(handle) = self.worker_thread.take() {
+            let _ = handle.join();
+        }
+    }
+}
+
+// ─── TemplateMatchTrigger background worker ───────────────────────────────────
+
+fn template_trigger_worker(
+    rx: crossbeam_channel::Receiver<Option<TemplateWork>>,
+    score: Arc<Mutex<Option<f32>>>,
+    template_path: std::path::PathBuf,
+    threshold: f32,
+) {
+    use crate::roi::template::TemplateMatchDetector;
+
+    let mut detector = TemplateMatchDetector::new(vec![template_path], threshold);
+
+    while let Ok(Some(item)) = rx.recv() {
+        // Search full frame at 40% scale — cheap and sufficient for full-screen
+        // game-over overlays.
+        let result = detector.detect_raw(&item.bgra, item.width, item.height, None, 0.4);
+
+        let new_score = result.map(|mr| mr.score).or(Some(0.0));
+
+        if let Ok(mut guard) = score.lock() {
+            *guard = new_score;
+        }
     }
 }
 

@@ -7,13 +7,15 @@ pub mod recorder;
 pub mod ring_buffer;
 
 use crate::capture::CaptureBackend;
-use crate::config::ProfileConfig;
+use crate::config::{ConsumerConfig, ProfileConfig};
 use crate::hooks::InputHookBackend;
 use crate::pipeline::consumer::{ConsumerError, FrameConsumer};
 use crate::pipeline::metrics::PipelineMetrics;
 use crate::roi::RoiManager;
 use crate::session::triggers::{TerminationTrigger, TriggerState};
+use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Instant;
 
 /// Result type for pipeline operations.
 #[derive(Debug, thiserror::Error)]
@@ -35,6 +37,52 @@ pub enum PipelineStop {
     Error(PipelineError),
 }
 
+// ─── Consumer factory ─────────────────────────────────────────────────────────
+
+/// Output of [`build_consumers`]: consumer list + optional realtime reader handle.
+pub struct BuildConsumersResult {
+    /// Consumers to pass to `Pipeline::new()`.
+    pub consumers: Vec<Box<dyn FrameConsumer>>,
+    /// Reader handle for the realtime ring buffer, present only when
+    /// `ConsumerConfig::realtime_enabled = true`.
+    pub frame_channel: Option<ring_buffer::FrameChannel>,
+}
+
+/// Build the consumer list from `ConsumerConfig`.
+///
+/// - `recording_enabled` → `DiskRecorderConsumer` writing to `session_dir`
+/// - `realtime_enabled`  → `RingBufferConsumer`; the `FrameChannel` reader is
+///   returned in `BuildConsumersResult::frame_channel` for the bot consumer
+/// - Both flags may be set simultaneously (dual-mode)
+pub fn build_consumers(
+    config: &ConsumerConfig,
+    session_dir: PathBuf,
+    fps: f64,
+    metrics: Arc<PipelineMetrics>,
+) -> Result<BuildConsumersResult, PipelineError> {
+    let mut consumers: Vec<Box<dyn FrameConsumer>> = Vec::new();
+    let mut frame_channel = None;
+
+    if config.recording_enabled {
+        let rec = recorder::DiskRecorderConsumer::new(
+            session_dir,
+            fps,
+            0, // use DEFAULT_QUEUE_CAP
+            Arc::clone(&metrics),
+        )?;
+        consumers.push(Box::new(rec));
+    }
+
+    if config.realtime_enabled {
+        let cap = config.ring_buffer_capacity.max(1);
+        let ring = ring_buffer::RingBufferConsumer::new(cap, Arc::clone(&metrics));
+        frame_channel = Some(ring.reader());
+        consumers.push(Box::new(ring));
+    }
+
+    Ok(BuildConsumersResult { consumers, frame_channel })
+}
+
 /// Main pipeline orchestrator.
 ///
 /// Runs the capture loop, evaluates ROI each frame, fans out to consumers,
@@ -42,6 +90,7 @@ pub enum PipelineStop {
 #[allow(dead_code)]
 pub struct Pipeline {
     config: ProfileConfig,
+    session_start: Instant,
     backend: Box<dyn CaptureBackend>,
     hook: Box<dyn InputHookBackend>,
     consumers: Vec<Box<dyn FrameConsumer>>,
@@ -51,8 +100,10 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         config: ProfileConfig,
+        session_start: Instant,
         backend: Box<dyn CaptureBackend>,
         hook: Box<dyn InputHookBackend>,
         consumers: Vec<Box<dyn FrameConsumer>>,
@@ -62,6 +113,7 @@ impl Pipeline {
     ) -> Self {
         Self {
             config,
+            session_start,
             backend,
             hook,
             consumers,
@@ -93,18 +145,26 @@ impl Pipeline {
             }
 
             // ROI evaluation.
-            self.roi_manager.update(&frame);
+            self.roi_manager.update(&frame, frame_id);
 
             // Gap detection.
             if frame_id > 0 {
                 // TODO(T033): compare with previous frame timestamp.
             }
 
-            // Consumer fan-out.
+            // Consumer fan-out — frame first, then events.
             for consumer in &mut self.consumers {
                 if let Err(e) = consumer.consume(&frame, frame_id) {
                     // Log and continue in degraded mode (Principle IV).
                     eprintln!("[WARN] Consumer error on frame {}: {}", frame_id, e);
+                }
+            }
+
+            // Forward input events to recording consumers.
+            if !events.is_empty() {
+                let push_done_ts_ns = self.session_start.elapsed().as_nanos() as u64;
+                for consumer in &mut self.consumers {
+                    consumer.push_events(events.clone(), push_done_ts_ns);
                 }
             }
 

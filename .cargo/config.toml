@@ -1,7 +1,12 @@
 [target.x86_64-pc-windows-msvc]
 linker = "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/link.exe"
+# Prepend vcpkg DLL path so FFmpeg shared libs are found at test runtime.
+runner = ["cmd", "/C", "set PATH=C:\\vcpkg\\installed\\x64-windows\\bin;%PATH% &&"]
 
 [env]
 VCPKG_ROOT = "C:/vcpkg"
 VCPKG_DEFAULT_HOST_TRIPLET = "x64-windows"
-LIBCLANG_PATH = "C:/Program Files/LLVM/bin"
+# ARM64 LLVM at C:/Program Files/LLVM/bin is not usable for x64 builds.
+# Use x64 libclang.dll from Unity Emscripten toolchain.
+LIBCLANG_PATH = "C:/Program Files/Unity/Hub/Editor/2021.3.4f1/Editor/Data/PlaybackEngines/WebGLSupport/BuildTools/Emscripten/llvm"
+FFMPEG_DIR = "C:/vcpkg/installed/x64-windows"

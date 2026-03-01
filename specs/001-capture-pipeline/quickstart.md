@@ -16,23 +16,46 @@
 
 ---
 
-## 1. OpenCV Setup (Windows)
+## 1. Template Matching Backend
+
+두 가지 백엔드가 있습니다. **기본값은 순수 Rust(추가 설치 없음)**이며, 성능이 필요하면 opencv로 전환합니다.
+
+### 1-A. 기본 백엔드 — 순수 Rust SAD (추가 설치 불필요)
+
+추가 설치 없이 `cargo build --features ffmpeg`으로 바로 동작합니다.
+
+- 템플릿 매칭: 순수 Rust SAD (Sum of Absolute Differences)
+- 속도: ~300–800 ms/frame (백그라운드 스레드 실행 — 캡처 스레드 무영향)
+- 제약: ARM64 Windows + x64 에뮬레이션 환경에서도 동작
+
+### 1-B. opencv 백엔드 — 고성능 (표준 x64 Windows 전용)
+
+> **전제조건**: 표준 x64 Windows (ARM64 호스트에서는 x64 libclang 부재로 빌드 불가)
 
 ```powershell
-# Option A: vcpkg (recommended)
-vcpkg install opencv4[contrib]:x64-windows
-$env:OPENCV_DIR = "C:\vcpkg\packages\opencv4_x64-windows"
+# Step 1: OpenCV 설치 (vcpkg 권장)
+vcpkg install opencv4:x64-windows --host-triplet=x64-windows
+$env:OPENCV_DIR = "C:\vcpkg\installed\x64-windows"
 
-# Option B: pre-built binary
-# Download from https://opencv.org/releases/ and set:
-$env:OPENCV_DIR = "C:\opencv\build"
-$env:Path += ";$env:OPENCV_DIR\x64\vc17\bin"
+# Step 2: LLVM x64 설치 (opencv-rust 빌드 스크립트가 libclang 필요)
+winget install LLVM.LLVM --architecture x64
+$env:LIBCLANG_PATH = "C:\Program Files\LLVM\bin"  # 설치 경로 확인 후 수정
+
+# Step 3: opencv 포함 빌드
+cargo build --release --features ffmpeg,opencv
 ```
 
-Add to `Cargo.toml` (handled by the project's build.rs):
-```toml
-[dependencies]
-opencv = { version = "0.91", features = ["clang-runtime"] }
+- 속도: ~5–15 ms/frame (SIMD 최적화)
+- OpenCV 버전: 4.x (`Cargo.toml`에 `opencv = { version = "0.98", features = ["clang-runtime"] }` 선언됨)
+
+**빌드 성공 확인:**
+```powershell
+cargo check --features opencv   # 오류 없으면 환경 설정 완료
+```
+
+**런타임 PATH 설정** (opencv DLL 인식):
+```powershell
+$env:Path += ";C:\vcpkg\installed\x64-windows\bin"
 ```
 
 ---
@@ -232,3 +255,5 @@ process's handle list:
 | `queue_push_done - event_ts > 10ms` | Hook thread starved | Raise hook thread priority to `THREAD_PRIORITY_TIME_CRITICAL` (profile setting) |
 | Missing `video.mp4` on session complete | ffmpeg library not found | Verify `FFMPEG_DIR` env var and that DLLs are on PATH |
 | All sessions go to `data/incomplete/` | Disk on different volume from `.wip/` | Ensure `data/` is on the same NTFS volume; update config if needed |
+| `cargo build --features opencv` fails with `libclang` error | ARM64 libclang ≠ x64 build script | 표준 x64 Windows에서만 opencv 빌드 가능; 현재 환경에서는 기본 Rust SAD 백엔드 사용 (`--features ffmpeg` 만) |
+| ROI가 Searching 상태에서 멈춤 | 템플릿 이미지 없음 또는 opencv 미활성화 | `assets/chrome_dino/` 에 PNG 파일 배치 확인; opencv 백엔드는 `--features opencv` 빌드 필요 |
